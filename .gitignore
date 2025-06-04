@@ -5,8 +5,16 @@ __pycache__/
 *.so
 .Python
 build/
-develop-eggs/
-dist/
+devel# Package building
+*.deb
+*.rpm
+*.tar.gz
+*.tar.xz
+debian/files
+debian/debhelper-build-stamp
+debian/*.substvars
+debian/.debhelper/
+.pybuild/dist/
 downloads/
 eggs/
 .eggs/

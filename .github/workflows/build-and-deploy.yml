@@ -1,0 +1,243 @@
+name: Build and Deploy APT Package
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          debhelper \
+          dh-python \
+          python3-setuptools \
+          python3-all \
+          python3-dev \
+          dpkg-dev \
+          fakeroot
+    
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Build package
+      run: |
+        chmod +x build-package.sh
+        ./build-package.sh
+    
+    - name: Test package installation
+      run: |
+        # Test that the package can be installed
+        sudo dpkg -i *.deb || true
+        sudo apt-get install -f -y
+        
+        # Verify commands are available
+        which iitm-login-manager
+        which iitm-login-tray
+        
+        # Test basic functionality
+        iitm-login-manager --help
+    
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-package-${{ github.sha }}
+        path: "*.deb"
+        retention-days: 30
+    
+    - name: Deploy to APT repository
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Configure git
+        git config --global user.name 'GitHub Actions Bot'
+        git config --global user.email 'actions@github.com'
+        
+        # Clone the repository with apt-repo branch
+        git clone --single-branch --branch apt-repo \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" apt-repo || \
+        {
+          # If apt-repo branch doesn't exist, create it
+          echo "Creating apt-repo branch..."
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" apt-repo
+          cd apt-repo
+          git checkout --orphan apt-repo
+          git rm -rf .
+          mkdir -p dists/stable/main/binary-amd64
+          mkdir -p pool/main
+          cd ..
+        }
+        
+        # Copy built package
+        cp *.deb apt-repo/pool/main/
+        
+        # Create repository generation script if it doesn't exist
+        cd apt-repo
+        if [ ! -f "generate-repo.sh" ]; then
+          cat > generate-repo.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "Generating APT repository metadata..."
+        
+        # Create directories if they don't exist
+        mkdir -p dists/stable/main/binary-amd64
+        mkdir -p pool/main
+        
+        # Generate Packages file
+        cd dists/stable/main/binary-amd64
+        dpkg-scanpackages ../../../../pool/main /dev/null | gzip -9c > Packages.gz
+        dpkg-scanpackages ../../../../pool/main /dev/null > Packages
+        
+        # Generate Release file
+        cd ..
+        cat > Release << RELEASE_EOF
+        Suite: stable
+        Codename: stable
+        Components: main
+        Architectures: amd64 all
+        Date: $(date -Ru)
+        Description: IITM Login Manager APT Repository
+        RELEASE_EOF
+        
+        # Calculate checksums for Packages files
+        echo "MD5Sum:" >> Release
+        for file in main/binary-amd64/Packages main/binary-amd64/Packages.gz; do
+            if [ -f "$file" ]; then
+                echo " $(md5sum "$file" | cut -d' ' -f1) $(stat --printf="%s" "$file") $file" >> Release
+            fi
+        done
+        
+        echo "SHA1:" >> Release
+        for file in main/binary-amd64/Packages main/binary-amd64/Packages.gz; do
+            if [ -f "$file" ]; then
+                echo " $(sha1sum "$file" | cut -d' ' -f1) $(stat --printf="%s" "$file") $file" >> Release
+            fi
+        done
+        
+        echo "SHA256:" >> Release
+        for file in main/binary-amd64/Packages main/binary-amd64/Packages.gz; do
+            if [ -f "$file" ]; then
+                echo " $(sha256sum "$file" | cut -d' ' -f1) $(stat --printf="%s" "$file") $file" >> Release
+            fi
+        done
+        
+        echo "✅ APT repository generated successfully!"
+        echo "📦 Packages in repository:"
+        ls -la ../../pool/main/
+        EOF
+          chmod +x generate-repo.sh
+        fi
+        
+        # Generate repository metadata
+        ./generate-repo.sh
+        
+        # Create index.html for GitHub Pages
+        cat > index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>IITM Login Manager - APT Repository</title>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .code-block { background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 10px 0; }
+                .install-cmd { background-color: #2d3748; color: #68d391; padding: 15px; border-radius: 5px; font-family: monospace; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🔐 IITM Login Manager</h1>
+                <p>Ubuntu system tray application for IITM login automation</p>
+            </div>
+            
+            <h2>📦 Quick Installation</h2>
+            <p>Install with a single command:</p>
+            <div class="install-cmd">
+                curl -fsSL https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/install-from-github.sh | sudo bash
+            </div>
+            
+            <h2>🔧 Manual Installation</h2>
+            <p>Add the repository and install:</p>
+            <div class="code-block">
+                <code>
+                echo "deb [trusted=yes] https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY##*/}/ stable main" | sudo tee /etc/apt/sources.list.d/iitm-login-manager.list<br>
+                sudo apt update<br>
+                sudo apt install iitm-login-manager
+                </code>
+            </div>
+            
+            <h2>📥 Direct Download</h2>
+            <p>Download the .deb package directly:</p>
+            <ul>
+        EOF
+        
+        # Add download links for packages
+        for deb in pool/main/*.deb; do
+            if [ -f "$deb" ]; then
+                basename_deb=$(basename "$deb")
+                echo "        <li><a href=\"$deb\">$basename_deb</a></li>" >> index.html
+            fi
+        done
+        
+        cat >> index.html << 'EOF'
+            </ul>
+            
+            <h2>🚀 Usage</h2>
+            <div class="code-block">
+                <code>
+                # CLI usage<br>
+                iitm-login-manager --help<br>
+                iitm-login-manager setup<br>
+                iitm-login-manager login<br><br>
+                
+                # GUI application<br>
+                iitm-login-tray
+                </code>
+            </div>
+            
+            <h2>📚 Documentation</h2>
+            <p>Visit the <a href="https://github.com/${GITHUB_REPOSITORY}">GitHub repository</a> for documentation and source code.</p>
+            
+            <footer style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p>Built with ❤️ for the IITM community</p>
+            </footer>
+        </body>
+        </html>
+        EOF
+        
+        # Commit and push changes
+        git add .
+        git commit -m "🚀 Deploy package $(date '+%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+        git push origin apt-repo
+        
+        echo "✅ Successfully deployed to APT repository!"
+        echo "🌐 Repository URL: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY##*/}/"
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "*.deb"
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

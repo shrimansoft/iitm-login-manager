@@ -14,26 +14,55 @@ A GTK-based system tray application for automated login to IIT Madras network ac
 
 ## Installation
 
-### APT Package Installation (Recommended)
+### Quick Installation (Recommended)
 
-Install using the standard Ubuntu package manager:
+Install directly from our GitHub APT repository:
 
 ```bash
-# Add repository and install
+curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/iitm-login-manager/main/install-from-github.sh | sudo bash
+```
+
+### Manual APT Installation
+
+1. Add the repository:
+```bash
+echo "deb [trusted=yes] https://YOUR_USERNAME.github.io/iitm-login-manager/ stable main" | sudo tee /etc/apt/sources.list.d/iitm-login-manager.list
 sudo apt update
+```
+
+2. Install the package:
+```bash
 sudo apt install iitm-login-manager
 ```
 
-✅ **That's it!** The application is now installed system-wide and available in your applications menu.
+### Direct Download
+
+Download the .deb package directly from GitHub:
+
+```bash
+wget https://YOUR_USERNAME.github.io/iitm-login-manager/pool/main/iitm-login-manager_1.0.0-1_all.deb
+sudo dpkg -i iitm-login-manager_1.0.0-1_all.deb
+sudo apt-get install -f  # Fix any dependency issues
+```
 
 ### From Source
 
-1. Clone or download this repository
-2. Install the package using pip:
-
+1. Clone the repository:
 ```bash
+git clone https://github.com/YOUR_USERNAME/iitm-login-manager.git
 cd iitm-login-manager
-pip install .
+```
+
+2. Install dependencies:
+```bash
+sudo apt install debhelper dh-python python3-setuptools
+pip install -r requirements.txt
+```
+
+3. Build and install:
+```bash
+./build-package.sh
+sudo dpkg -i *.deb
 ```
 
 ### Dependencies
