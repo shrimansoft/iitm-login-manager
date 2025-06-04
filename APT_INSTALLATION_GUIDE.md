@@ -27,6 +27,8 @@ This guide explains how to install IITM Login Manager using the `apt` package ma
    sudo apt install iitm-login-manager
    ```
 
+   ✅ **Installation Complete!** The package is now available system-wide.
+
 ### Option 2: Manual Package Installation
 
 1. **Build the Package:**

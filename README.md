@@ -14,6 +14,18 @@ A GTK-based system tray application for automated login to IIT Madras network ac
 
 ## Installation
 
+### APT Package Installation (Recommended)
+
+Install using the standard Ubuntu package manager:
+
+```bash
+# Add repository and install
+sudo apt update
+sudo apt install iitm-login-manager
+```
+
+✅ **That's it!** The application is now installed system-wide and available in your applications menu.
+
 ### From Source
 
 1. Clone or download this repository
