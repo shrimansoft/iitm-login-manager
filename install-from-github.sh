@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Repository configuration
-REPO_URL="https://YOUR_USERNAME.github.io/iitm-login-manager/"
+REPO_URL="https://shrimansoft.github.io/iitm-login-manager/"
 PACKAGE_NAME="iitm-login-manager"
 LIST_FILE="/etc/apt/sources.list.d/iitm-login-manager.list"
 
@@ -189,7 +189,3 @@ trap 'echo -e "\n${RED}❌ Installation cancelled by user${NC}"; exit 1' INT
 # Run main function
 main
 
-# Note about manual configuration
-echo -e "\n${YELLOW}📝 Note:${NC}"
-echo "Replace 'YOUR_USERNAME' in the repository URL with the actual GitHub username"
-echo "This script template needs to be customized for your specific repository."
