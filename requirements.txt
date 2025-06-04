@@ -1,0 +1,6 @@
+requests>=2.25.0
+beautifulsoup4>=4.9.0
+PyGObject>=3.40.0
+schedule>=1.1.0
+cryptography>=3.4.0
+keyring>=23.0.0

@@ -1,0 +1,12 @@
+iitm-login-manager (1.0.0-1) unstable; urgency=medium
+
+  * Initial release of IITM Login Manager
+  * Automated login system for IIT Madras network access
+  * GTK system tray application with real-time status monitoring
+  * Command-line interface for automation and scripting
+  * Secure credential storage using system keyring
+  * Scheduled login attempts with customizable intervals
+  * Desktop notifications and system integration
+  * Cross-platform compatibility with Linux desktop environments
+
+ -- Shriman <shrimansoft@gmail.com>  Tue, 04 Jun 2025 11:00:00 +0530

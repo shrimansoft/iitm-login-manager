@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install
+	# Install desktop file
+	install -D -m 644 data/iitm-login-manager.desktop debian/iitm-login-manager/usr/share/applications/iitm-login-manager.desktop
+	# Install icon
+	install -D -m 644 data/iitm-login-manager.png debian/iitm-login-manager/usr/share/pixmaps/iitm-login-manager.png
+	# Install systemd service file
+	install -D -m 644 data/iitm-login-manager.service debian/iitm-login-manager/usr/share/doc/iitm-login-manager/examples/iitm-login-manager.service
+
+override_dh_installsystemd:
+	# Skip systemd installation as it's user-specific
+
+override_dh_auto_test:
+	# Skip tests during package build

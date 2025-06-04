@@ -1,0 +1,41 @@
+Source: iitm-login-manager
+Section: net
+Priority: optional
+Maintainer: Shriman <shrimansoft@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-setuptools,
+               python3-all
+Standards-Version: 4.6.0
+Homepage: https://github.com/shrimansoft/iitm-login-manager
+Vcs-Browser: https://github.com/shrimansoft/iitm-login-manager
+Vcs-Git: https://github.com/shrimansoft/iitm-login-manager.git
+Rules-Requires-Root: no
+
+Package: iitm-login-manager
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3-requests,
+         python3-schedule,
+         python3-keyring,
+         python3-gi,
+         python3-bs4,
+         gir1.2-gtk-3.0,
+         gir1.2-appindicator3-0.1,
+         gir1.2-notify-0.7
+Description: Automated login system for IIT Madras network access
+ IITM Login Manager is a comprehensive automation tool designed specifically
+ for IIT Madras students and staff to streamline network access. It provides
+ both command-line and graphical interfaces for managing internet connectivity.
+ .
+ Key features include:
+  * Automated login to IITM network with secure credential storage
+  * System tray application with real-time status monitoring
+  * Scheduled login attempts (daily/twice daily)
+  * Desktop notifications for login events
+  * Command-line interface for scripting and automation
+  * Cross-platform compatibility with Linux desktop environments
+ .
+ The application uses secure keyring storage for credentials and provides
+ a user-friendly setup process for first-time configuration.
