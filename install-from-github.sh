@@ -2,7 +2,7 @@
 set -e
 
 # IITM Login Manager - GitHub Installation Script
-# This script installs IITM Login Manager by building from source
+# This script installs IITM Login Manager by downloading the .deb package directly
 
 echo "🔧 IITM Login Manager - GitHub Installation"
 echo "=========================================="
@@ -16,7 +16,9 @@ NC='\033[0m' # No Color
 
 # Package configuration
 PACKAGE_NAME="iitm-login-manager"
-REPO_URL="https://github.com/shrimansoft/iitm-login-manager.git"
+PACKAGE_VERSION="1.0.0-1"
+DEB_FILE="${PACKAGE_NAME}_${PACKAGE_VERSION}_all.deb"
+DOWNLOAD_URL="https://github.com/shrimansoft/iitm-login-manager/raw/master/${DEB_FILE}"
 TEMP_DIR="/tmp/iitm-login-manager-install"
 
 # Check if running as root
