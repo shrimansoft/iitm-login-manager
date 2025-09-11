@@ -5,16 +5,8 @@ __pycache__/
 *.so
 .Python
 build/
-devel# Package building
-*.deb
-*.rpm
-*.tar.gz
-*.tar.xz
-debian/files
-debian/debhelper-build-stamp
-debian/*.substvars
-debian/.debhelper/
-.pybuild/dist/
+develop-eggs/
+dist/
 downloads/
 eggs/
 .eggs/
@@ -75,7 +67,6 @@ ehthumbs.db
 Thumbs.db
 
 # Package building
-*.deb
 *.rpm
 *.tar.gz
 *.tar.xz

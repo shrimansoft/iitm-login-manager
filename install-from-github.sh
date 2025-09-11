@@ -2,7 +2,7 @@
 set -e
 
 # IITM Login Manager - GitHub Installation Script
-# This script installs IITM Login Manager from the GitHub APT repository
+# This script installs IITM Login Manager by building from source
 
 echo "🔧 IITM Login Manager - GitHub Installation"
 echo "=========================================="
@@ -14,10 +14,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Repository configuration
-REPO_URL="https://shrimansoft.github.io/iitm-login-manager/"
+# Package configuration
 PACKAGE_NAME="iitm-login-manager"
-LIST_FILE="/etc/apt/sources.list.d/iitm-login-manager.list"
+REPO_URL="https://github.com/shrimansoft/iitm-login-manager.git"
+TEMP_DIR="/tmp/iitm-login-manager-install"
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
@@ -42,53 +42,75 @@ else
     echo -e "${YELLOW}⚠️  Could not detect OS version${NC}"
 fi
 
-# Function to check if repository is already added
-check_repository() {
-    if [ -f "$LIST_FILE" ]; then
-        echo -e "${YELLOW}⚠️  Repository already configured${NC}"
-        return 0
+# Function to check if package is already installed
+check_existing_installation() {
+    if dpkg -l | grep -q "^ii.*$PACKAGE_NAME"; then
+        echo -e "${YELLOW}⚠️  $PACKAGE_NAME is already installed${NC}"
+        local current_version=$(dpkg -l | grep "$PACKAGE_NAME" | awk '{print $3}')
+        echo -e "${BLUE}Current version: $current_version${NC}"
+        
+        echo -n "Do you want to reinstall? (y/N): "
+        read -r response
+        if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+            return 1  # Continue with installation
+        else
+            echo -e "${GREEN}Installation skipped. Use existing installation.${NC}"
+            return 0  # Skip installation
+        fi
     else
-        return 1
+        return 1  # Not installed, continue
     fi
 }
 
-# Function to add repository
-add_repository() {
-    echo -e "${BLUE}📦 Adding IITM Login Manager repository...${NC}"
-    
-    # Create repository entry
-    echo "deb [trusted=yes] $REPO_URL stable main" | sudo tee "$LIST_FILE" > /dev/null
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Repository added successfully${NC}"
-        return 0
-    else
-        echo -e "${RED}❌ Failed to add repository${NC}"
-        return 1
-    fi
-}
-
-# Function to update package list
-update_package_list() {
-    echo -e "${BLUE}🔄 Updating package list...${NC}"
+# Function to install build dependencies
+install_build_dependencies() {
+    echo -e "${BLUE}📋 Installing build dependencies...${NC}"
     
     sudo apt update > /dev/null 2>&1
     
+    # Install build tools and dependencies
+    sudo apt install -y git python3 python3-pip python3-setuptools 
+                        python3-gi python3-gi-cairo gir1.2-gtk-3.0 
+                        gir1.2-appindicator3-0.1 gir1.2-notify-0.7 
+                        python3-requests python3-keyring > /dev/null 2>&1
+    
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Package list updated${NC}"
+        echo -e "${GREEN}✓ Build dependencies installed${NC}"
         return 0
     else
-        echo -e "${RED}❌ Failed to update package list${NC}"
-        echo "You may need to check your internet connection or repository configuration."
+        echo -e "${RED}❌ Failed to install build dependencies${NC}"
         return 1
     fi
 }
 
-# Function to install package
+# Function to setup temporary directory and clone repository
+setup_source() {
+    echo -e "${BLUE}📁 Setting up source code...${NC}"
+    
+    # Remove existing temp directory if it exists
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+    
+    # Clone the repository
+    git clone "$REPO_URL" "$TEMP_DIR" > /dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Source code downloaded${NC}"
+        cd "$TEMP_DIR"
+        return 0
+    else
+        echo -e "${RED}❌ Failed to download source code${NC}"
+        return 1
+    fi
+}
+
+# Function to install package using setup.py
 install_package() {
     echo -e "${BLUE}📦 Installing $PACKAGE_NAME...${NC}"
     
-    sudo apt install -y $PACKAGE_NAME
+    # Install using pip with --user flag to avoid permission issues
+    python3 -m pip install --user . > /dev/null 2>&1
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ $PACKAGE_NAME installed successfully${NC}"
@@ -96,6 +118,106 @@ install_package() {
     else
         echo -e "${RED}❌ Failed to install $PACKAGE_NAME${NC}"
         return 1
+    fi
+}
+
+# Function to create temporary directory
+setup_temp_directory() {
+    echo -e "${BLUE}� Setting up temporary directory...${NC}"
+    
+    # Remove existing temp directory if it exists
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+    
+    mkdir -p "$TEMP_DIR"
+    cd "$TEMP_DIR"
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Temporary directory created: $TEMP_DIR${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Failed to create temporary directory${NC}"
+        return 1
+    fi
+}
+
+# Function to download package
+download_package() {
+    echo -e "${BLUE}� Downloading $DEB_FILE...${NC}"
+    
+    # Check if wget is available, otherwise use curl
+    if command -v wget &> /dev/null; then
+        wget -q --show-progress "$DOWNLOAD_URL" -O "$DEB_FILE"
+    elif command -v curl &> /dev/null; then
+        curl -L --progress-bar "$DOWNLOAD_URL" -o "$DEB_FILE"
+    else
+        echo -e "${RED}❌ Neither wget nor curl is available${NC}"
+        return 1
+    fi
+    
+    if [ $? -eq 0 ] && [ -f "$DEB_FILE" ]; then
+        echo -e "${GREEN}✓ Package downloaded successfully${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Failed to download package${NC}"
+        echo "URL: $DOWNLOAD_URL"
+        return 1
+    fi
+}
+
+# Function to install dependencies
+install_dependencies() {
+    echo -e "${BLUE}📋 Installing dependencies...${NC}"
+    
+    sudo apt update > /dev/null 2>&1
+    
+    # Install required packages for GUI applications
+    sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 \
+                        gir1.2-appindicator3-0.1 gir1.2-notify-0.7 \
+                        python3-requests python3-keyring > /dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Dependencies installed${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Some dependencies may not have been installed${NC}"
+        return 0  # Continue anyway
+    fi
+}
+
+# Function to install package
+install_package() {
+    echo -e "${BLUE}📦 Installing $DEB_FILE...${NC}"
+    
+    # Install the .deb package
+    sudo dpkg -i "$DEB_FILE"
+    
+    # Fix any dependency issues
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  Fixing dependencies...${NC}"
+        sudo apt-get install -f -y > /dev/null 2>&1
+        
+        # Try installing again
+        sudo dpkg -i "$DEB_FILE"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ $PACKAGE_NAME installed successfully${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Failed to install $PACKAGE_NAME${NC}"
+        return 1
+    fi
+}
+
+# Function to cleanup
+cleanup() {
+    echo -e "${BLUE}🧹 Cleaning up...${NC}"
+    
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+        echo -e "${GREEN}✓ Temporary files cleaned up${NC}"
     fi
 }
 
@@ -153,23 +275,30 @@ show_usage() {
 main() {
     echo -e "${BLUE}Starting installation process...${NC}\n"
     
-    # Check if repository is already added
-    if check_repository; then
-        echo -e "${BLUE}Repository already configured, proceeding with installation...${NC}"
-    else
-        # Add repository
-        if ! add_repository; then
-            exit 1
-        fi
+    # Check if already installed
+    if check_existing_installation; then
+        echo -e "${BLUE}Proceeding with installation/upgrade...${NC}"
     fi
     
-    # Update package list
-    if ! update_package_list; then
+    # Setup temporary directory
+    if ! setup_temp_directory; then
         exit 1
+    fi
+    
+    # Download package
+    if ! download_package; then
+        cleanup
+        exit 1
+    fi
+    
+    # Install dependencies
+    if ! install_dependencies; then
+        echo -e "${YELLOW}⚠️  Continuing with package installation despite dependency issues${NC}"
     fi
     
     # Install package
     if ! install_package; then
+        cleanup
         exit 1
     fi
     
@@ -179,12 +308,15 @@ main() {
         echo "The package was installed but some components may not be working correctly."
     fi
     
+    # Cleanup
+    cleanup
+    
     echo -e "\n${GREEN}🎉 Installation completed successfully!${NC}"
     show_usage
 }
 
 # Handle Ctrl+C
-trap 'echo -e "\n${RED}❌ Installation cancelled by user${NC}"; exit 1' INT
+trap 'echo -e "\n${RED}❌ Installation cancelled by user${NC}"; cleanup; exit 1' INT
 
 # Run main function
 main
