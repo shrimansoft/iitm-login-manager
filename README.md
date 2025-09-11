@@ -1,231 +1,47 @@
 # IITM Login Manager
 
-A GTK-based system tray application for automated login to IIT Madras network access system. This tool provides a convenient way to manage your IITM network login with scheduled automation and desktop notifications.
+A simple desktop app that automatically logs you into the IIT Madras internet network. No more manual login every time you connect to IITM WiFi!
 
-## Features
+## What does it do?
 
-- **System Tray Integration**: Shows login status with visual indicators in the system tray
-- **Automated Scheduling**: Login automatically once or twice daily
-- **Secure Credential Storage**: Passwords stored securely using system keyring
-- **Desktop Notifications**: Get notified about login status and issues
-- **Manual Login**: Trigger login manually when needed
-- **Internet Status Checking**: Monitor your current internet connectivity
-- **Auto-start Support**: Start automatically with your desktop session
+- 🔄 **Automatic Login**: Logs you into IITM network automatically
+- 🕐 **Scheduled Login**: Can login once or twice daily at set times
+- 🔔 **Notifications**: Shows you when login is successful or if there's a problem  
+- 🖥️ **System Tray**: Lives quietly in your system tray with a simple icon
+- 🔒 **Secure**: Your password is stored safely on your computer
 
-## Installation
+## Easy Installation
 
-### Quick Installation (Recommended)
-
-Install directly from our GitHub APT repository:
+Just copy and paste this command in your terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/iitm-login-manager/main/install-from-github.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/shrimansoft/iitm-login-manager/master/install-from-github.sh | bash
 ```
 
-### Manual APT Installation
+That's it! The app will be installed automatically. (The script will ask for your password when needed)
 
-1. Add the repository:
-```bash
-echo "deb [trusted=yes] https://YOUR_USERNAME.github.io/iitm-login-manager/ stable main" | sudo tee /etc/apt/sources.list.d/iitm-login-manager.list
-sudo apt update
-```
+## How to Use
 
-2. Install the package:
-```bash
-sudo apt install iitm-login-manager
-```
-
-### Direct Download
-
-Download the .deb package directly from GitHub:
-
-```bash
-wget https://YOUR_USERNAME.github.io/iitm-login-manager/pool/main/iitm-login-manager_1.0.0-1_all.deb
-sudo dpkg -i iitm-login-manager_1.0.0-1_all.deb
-sudo apt-get install -f  # Fix any dependency issues
-```
-
-### From Source
-
-1. Clone the repository:
-```bash
-git clone https://github.com/YOUR_USERNAME/iitm-login-manager.git
-cd iitm-login-manager
-```
-
-2. Install dependencies:
-```bash
-sudo apt install debhelper dh-python python3-setuptools
-pip install -r requirements.txt
-```
-
-3. Build and install:
-```bash
-./build-package.sh
-sudo dpkg -i *.deb
-```
-
-### Dependencies
-
-The following system packages are required:
-
-**Ubuntu/Debian:**
-```bash
-sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1 gir1.2-notify-0.7
-```
-
-**Fedora/RHEL:**
-```bash
-sudo dnf install python3-gobject gtk3-devel libappindicator-gtk3-devel libnotify-devel
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S python-gobject gtk3 libappindicator-gtk3 libnotify
-```
-
-## Usage
-
-### Initial Setup
-
-After installation, run the setup command to configure your credentials:
-
+### Step 1: Set up your login details
+After installation, open a terminal and type:
 ```bash
 iitm-login-manager --setup
 ```
+Enter your IITM username and password when asked.
 
-This will prompt you for your IITM username (LDAP ID) and password. The password will be stored securely in your system keyring.
+You'll see a small network icon in your system tray (usually top-right corner of your screen).
 
-### Starting the System Tray App
+### Step 3: Configure (optional)
+Right-click on the tray icon and select "Settings" to:
+- Choose when to auto-login (once daily, twice daily, or manual only)
+- Enable auto-start with your computer
 
-To start the system tray application:
 
-```bash
-iitm-login-tray
-```
+### Get More Help
 
-The app will appear in your system tray with a network icon that changes color based on connection status:
-- **Blue**: Connected/Online
-- **Gray**: Offline/Disconnected  
-- **Yellow**: Connecting
-- **Red**: Error
-
-### Command Line Usage
-
-You can also use the command line interface:
-
-```bash
-# Perform login now
-iitm-login-manager --login
-
-# Check internet status
-iitm-login-manager --status
-
-# Setup credentials
-iitm-login-manager --setup
-
-# Start tray app
-iitm-login-manager --tray
-```
-
-### Configuration
-
-Right-click on the system tray icon and select "Settings..." to configure:
-
-- **Credentials**: Your IITM username and password
-- **Schedule**: Choose between:
-  - Once daily (8:00 AM)
-  - Twice daily (8:00 AM & 8:00 PM)  
-  - Manual only
-- **Auto-start**: Start with desktop session
-
-## Auto-start Setup
-
-To make the application start automatically with your desktop session:
-
-1. Right-click the tray icon → Settings
-2. Check "Start with system"
-3. Click OK
-
-Alternatively, you can enable the systemd user service:
-
-```bash
-systemctl --user enable iitm-login-manager.service
-systemctl --user start iitm-login-manager.service
-```
-
-## Troubleshooting
-
-### Application doesn't start
-- Make sure all GTK dependencies are installed
-- Check if you're running a desktop environment with system tray support
-- Try running from terminal to see error messages
-
-### Login fails
-- Verify your credentials using the command line: `iitm-login-manager --login --verbose`
-- Check if you can access the IITM netaccess portal manually
-- Ensure you're connected to IITM network
-
-### No system tray icon
-- Make sure your desktop environment supports system tray (most modern DEs do)
-- Try installing `gnome-shell-extension-appindicator` on GNOME
-- Check if the application is running: `pgrep -f iitm-login-tray`
-
-### Permission errors
-- Make sure you have write permissions to `~/.config/iitm-login-manager/`
-- Check keyring permissions if password storage fails
-
-## Development
-
-### Running from source
-
-```bash
-cd iitm-login-manager
-python -m iitm_login_manager.main --help
-python -m iitm_login_manager.tray
-```
-
-### Building and installing
-
-```bash
-python setup.py sdist bdist_wheel
-pip install dist/iitm-login-manager-1.0.0.tar.gz
-```
-
-## Security Notes
-
-- Passwords are stored securely using the system keyring (gnome-keyring, kwallet, etc.)
-- No passwords are stored in plain text files
-- All network communication uses HTTPS where possible
-- Configuration files only contain non-sensitive information
+- For detailed technical information, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)
+- Report problems: [GitHub Issues](https://github.com/shrimansoft/iitm-login-manager/issues)
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly  
-5. Submit a pull request
-
-## Support
-
-If you encounter issues:
-
-1. Check the troubleshooting section above
-2. Run with `--verbose` flag to see detailed output
-3. Check system logs: `journalctl --user -u iitm-login-manager.service`
-4. Create an issue on the project repository
-
-## Changelog
-
-### v1.0.0
-- Initial release
-- GTK system tray application
-- Automated scheduling support
-- Secure credential storage
-- Desktop notifications
-- Command line interface
+Free to use under MIT License - see LICENSE file for details.

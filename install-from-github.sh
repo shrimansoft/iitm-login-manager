@@ -146,7 +146,7 @@ show_usage() {
     echo "  - Configuration file: ~/.config/iitm-login-manager/config.json"
     echo "  - Logs: ~/.local/share/iitm-login-manager/logs/"
     echo
-    echo "For more information, visit: https://github.com/YOUR_USERNAME/iitm-login-manager"
+    echo "For more information, visit: https://github.com/shrimansoft/iitm-login-manager"
 }
 
 # Main installation process
